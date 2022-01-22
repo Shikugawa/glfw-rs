@@ -121,7 +121,7 @@ use vk_sys::{
 #[cfg(feature = "vulkan-ash")]
 use ash::vk::{
     self as vk, AllocationCallbacks as VkAllocationCallbacks, Instance as VkInstance,
-    PhysicalDevice as VkPhysicalDevice, Result as VkResult, SurfaceKHR as VkSurfaceKHR
+    PhysicalDevice as VkPhysicalDevice, Result as VkResult, SurfaceKHR as VkSurfaceKHR,
 };
 
 /// Alias to `MouseButton1`, supplied for improved clarity.

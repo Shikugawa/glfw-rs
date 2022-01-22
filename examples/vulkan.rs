@@ -25,18 +25,49 @@ use vk_sys::{
 };
 
 #[cfg(feature = "vulkan-ash")]
-use ash::vk::{
-    self as vk, EntryPoints, Instance as VkInstance, InstanceCreateInfo, InstancePointers,
-    Result as VkResult,
-};
+use ash::Instance;
 
-#[cfg(feature = "vulkan-common")]
+#[cfg(feature = "vulkan-ash")]
+use ash::vk::InstanceCreateInfo;
+
+#[cfg(feature = "vulkan-ash")]
+use ash::Entry;
+
+#[cfg(feature = "vulkan")]
 use std::{mem, os::raw::c_void, ptr};
 
 #[cfg(feature = "vulkan-common")]
 use glfw::Context;
 
-#[cfg(feature = "vulkan-common")]
+#[cfg(feature = "vulkan-ash")]
+fn main() {
+    let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
+
+    glfw.window_hint(glfw::WindowHint::Visible(true));
+
+    let (mut window, _) = glfw
+        .create_window(640, 480, "Defaults", glfw::WindowMode::Windowed)
+        .expect("Failed to create GLFW window.");
+
+    window.make_current();
+
+    assert!(glfw.vulkan_supported());
+
+    let required_extensions = glfw.get_required_instance_extensions().unwrap_or(vec![]);
+
+    //VK_KHR_surface will always be available if the previous operations were successful
+    assert!(required_extensions.contains(&"VK_KHR_surface".to_string()));
+
+    println!("Vulkan required extensions: {:?}", required_extensions);
+
+    let mut entry = unsafe { Entry::load().unwrap() };
+    let instance = create_instance(&mut entry);
+    destroy_instance(instance);
+
+    println!("Vulkan instance successfully created and destroyed.");
+}
+
+#[cfg(feature = "vulkan")]
 fn main() {
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
 
@@ -78,7 +109,7 @@ fn main() {
     println!("Vulkan instance successfully created and destroyed.");
 }
 
-#[cfg(feature = "vulkan-common")]
+#[cfg(feature = "vulkan")]
 unsafe fn create_instance(entry_points: &mut EntryPoints) -> VkInstance {
     let mut instance: mem::MaybeUninit<VkInstance> = mem::MaybeUninit::uninit();
 
@@ -107,7 +138,21 @@ unsafe fn create_instance(entry_points: &mut EntryPoints) -> VkInstance {
     instance.assume_init()
 }
 
-#[cfg(feature = "vulkan-common")]
+#[cfg(feature = "vulkan-ash")]
+fn create_instance(entry_points: &mut Entry) -> Instance {
+    //This is literally the bare minimum required to create a blank instance
+    //You'll want to fill in this with real data yourself
+    let info = InstanceCreateInfo::builder().flags(ash::vk::InstanceCreateFlags::from_raw(0));
+    let res = unsafe { entry_points.create_instance(&info, None).unwrap() };
+    res
+}
+
+#[cfg(feature = "vulkan")]
 unsafe fn destroy_instance(instance: VkInstance, instance_ptrs: &mut InstancePointers) {
     instance_ptrs.DestroyInstance(instance, ptr::null());
+}
+
+#[cfg(feature = "vulkan-ash")]
+fn destroy_instance(instance: Instance) {
+    unsafe { instance.destroy_instance(None) };
 }
